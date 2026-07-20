@@ -1,0 +1,7 @@
+{
+  "name": "spectrogram-app",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:18",
+  "features": {
+    "ghcr.io/devcontainers/features/postgresql:1": {}
+  }
+}
