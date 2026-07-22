@@ -1,12 +1,10 @@
 const pool = require('../db')
 const crypto = require('crypto')
+const { hash_token } = requre('../services/tokenService')
 const MAX_RETRIES = 10
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-function hash_token(token){
-    return crypto.createHash('sha256').update(token).digest('hex')
-}
 
 async function check_hash(token_hash = null){
     if(!token_hash) return [[], "null"]
@@ -33,7 +31,7 @@ async function requireAuth(req,res,next){
     if(!token){
         return res.status(401).json({error:"Not Authenticated"})
     }
-    const token_hash = hash_token(token)
+    const [,token_hash] = hash_token(token)
 
     do{
         [result,outcome] =  await check_hash(token_hash)
@@ -53,8 +51,8 @@ async function requireAuth(req,res,next){
 
     if(new Date(session.expires_at).getTime() <= Date.now()) return res.status(401).json({error: "Session Expired"})
     
-    req.user = { id: session.user_id, username: session.username };
-    return next();
+    req.user = { id: session.user_id, username: session.username }
+    return next()
 }
 
-module.exports = requireAuth;
+module.exports = requireAuth
