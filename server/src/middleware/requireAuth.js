@@ -1,26 +1,8 @@
-const pool = require('../db')
-const crypto = require('crypto')
-const { hash_token } = requre('../services/tokenService')
+const { hash_token } = require('../services/tokenService')
+const { check_hash } =  require('../models/sessions')
 const MAX_RETRIES = 10
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-
-async function check_hash(token_hash = null){
-    if(!token_hash) return [[], "null"]
-    try{
-        const result = await pool.query(
-            "SELECT sessions.user_id, sessions.expires_at, users.username FROM sessions JOIN users ON sessions.user_id = users.id WHERE sessions.token_hash = $1",
-            [token_hash]
-        )
-        return [result, "success"]
-    }catch(error){
-        if (["ECONNREFUSED", "ETIMEDOUT", "08006", "08000", "08001", "57P01"].includes(error.code)) {
-            return [[], "connection"];
-        }
-        return [[], "other"]
-    }
-}
 
 async function requireAuth(req,res,next){
     const token = req.cookies.session_token

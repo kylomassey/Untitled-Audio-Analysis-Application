@@ -2,8 +2,8 @@ const express = require('express')
 const argon2 = require('argon2')
 const asyncHandler = require('../utils/asyncHandler')
 const { hash_token } = require('../services/tokenService')
-const pool = require('../db')
-const crypto = require('crypto')
+const { create_session, delete_session } =  require('../models/sessions')
+const { add_user, get_user_hash } = require('../models/users')
 const router = express.Router()
 const MAX_RETRIES = 10 
 
@@ -39,90 +39,6 @@ async function hash_password(password){
   }
 }
 
-async function delete_session(token_hash = null){
-  if(!token_hash) return [[], "null"]
-
-  try{
-    const result = await pool.query(
-      "DELETE FROM sessions WHERE token_hash = $1",
-      [token_hash]
-    )
-    return [result, "success"]
-  }catch (error){
-    if (["ECONNREFUSED", "ETIMEDOUT", "08006", "08000", "08001", "57P01"].includes(error.code)) {
-      return [[], "connection"];
-    }
-    return [[], "other"]
-  }
-}
-
-async function get_user_hash(username = null){
-  if(!username) return [[], "null"]
-
-  try{
-    const result = await pool.query(
-      "SELECT id, password_hash FROM users WHERE username = $1",
-      [username]
-    )
-    return [result, "success"]
-  }catch(error){
-    if (["ECONNREFUSED", "ETIMEDOUT", "08006", "08000", "08001", "57P01"].includes(error.code)) {
-      return [[], "connection"];
-    }
-    return [[], "other"]
-  }
-}
-
-async function create_session(id= null, token_hash = null){
-  if(!id || !token_hash) return [false, "null"]
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
-
-  try{
-    const result = await pool.query(
-      "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
-      [id, token_hash, expiresAt]
-    )
-    return [true, "success"]
-  }catch (error){
-    if (error.code === "23505"){
-      if (error.constraint === "sessions_token_hash_key"){
-        return [false, "hash"]
-      }
-      return [false, "duplicate"]
-    }
-    if (["ECONNREFUSED", "ETIMEDOUT", "08006", "08000", "08001", "57P01"].includes(error.code)) {
-      return [false, "connection"];
-    }
-    return [false, "other"]
-  }
-}
-
-async function add_user(username = null, email = null, hash = null){
-  if(!username || !email || !hash) return [false, "null"]
-
-  try{
-    const result = await pool.query(
-      "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
-      [username, email, hash]
-    )
-    return [true, "success"]
-  }catch(error){
-    if (error.code === "23505"){
-      if (error.constraint === "users_email_key"){
-        return [false, "email"]
-      }
-      if (error.constraint === "users_username_key"){
-        return [false, "username"]
-      }
-      return [false, "duplicate"]
-    }
-    if (["ECONNREFUSED", "ETIMEDOUT", "08006", "08000", "08001", "57P01"].includes(error.code)) {
-      return [false, "connection"];
-    }
-    return [false, "other"]
-  }
-}
-
 router.post('/logout', asyncHandler (async(req, res) => {
   const token = req.cookies.session_token
   let result = null
@@ -145,7 +61,7 @@ router.post('/logout', asyncHandler (async(req, res) => {
     case "other": return res.status(500).json({ error: "Unexpected error" }) 
   }
 
-  if(result.rowscount === 0) return res.status(200).json({message: "Already logged out"})
+  if(result.rowcount === 0) return res.status(200).json({message: "Already logged out"})
 
   res.clearCookie('session_token')
   return res.status(200).json({message: "Logged out Successfully"})

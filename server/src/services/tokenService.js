@@ -6,4 +6,4 @@ function hash_token(token = null){
     return [token, token_hash]
 }
 
-module.exports = hash_token
+module.exports = { hash_token }
