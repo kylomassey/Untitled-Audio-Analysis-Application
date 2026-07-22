@@ -61,7 +61,7 @@ async function get_user_hash(username = null){
   }
 }
 
-async function create_session(id, token_hash){
+async function create_session(id= null, token_hash = null){
   if(!id || !token_hash) return [false, "null"]
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
 
