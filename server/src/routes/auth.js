@@ -4,6 +4,7 @@ const asyncHandler = require('../utils/asyncHandler')
 const { hash_token } = require('../services/tokenService')
 const { create_session, delete_session } =  require('../models/sessions')
 const { add_user, get_user_hash } = require('../models/users')
+const requireAuth = require('../middleware/requireAuth')
 const router = express.Router()
 const MAX_RETRIES = 10 
 
@@ -149,4 +150,7 @@ router.post('/register', asyncHandler (async(req, res) => {
   }
 }));
 
+router.get('/me', requireAuth, asyncHandler(async(req,res) => {
+  return res.status(200).json({user: req.user})
+}))
 module.exports = router;
