@@ -43,4 +43,20 @@ async function add_user(username = null, email = null, hash = null){
   }
 }
 
-module.exports = { get_user_hash, add_user }
+async function change_username(user_id = null, new_username = null){
+  if (!user_id || !new_username) return [false, "null"]
+  try{
+    const result = await pool.query( "UPDATE users SET username = $1 WHERE user_id = $2 RETURNING username",
+      [new_username, user_id]
+     )
+    if (result.rows[0].length === 0)return [false, "invalid"]
+    return [true, result.rows[0].username]
+  }catch(error){
+    if (["ECONNREFUSED", "ETIMEDOUT", "08006", "08000", "08001", "57P01"].includes(error.code)) {
+      return [[], "connection"];
+    }
+    return [[], "other"]
+  }
+}
+
+module.exports = { get_user_hash, add_user, change_username }

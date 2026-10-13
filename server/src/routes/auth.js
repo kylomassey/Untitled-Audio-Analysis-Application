@@ -1,44 +1,14 @@
 const express = require('express')
-const argon2 = require('argon2')
 const asyncHandler = require('../utils/asyncHandler')
 const { hash_token } = require('../services/tokenService')
 const { create_session, delete_session } =  require('../models/sessions')
 const { add_user, get_user_hash } = require('../models/users')
+const { user_validation, verify_password, hash_password } = require('../utils/user_tools')
 const requireAuth = require('../middleware/requireAuth')
 const router = express.Router()
 const MAX_RETRIES = 10 
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-function user_validation(username, email, password, mode = "login"){
-    let password_regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/
-    let user_regex = /^[A-Za-z0-9_-]{6,255}$/
-    let email_regex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,255}$/i
-    
-    if(!password_regex.test(password)) return false
-    if(!user_regex.test(username)) return false
-    if (mode === "register"){
-      if(!email_regex.test(email)) return false
-    }
-    return true
-}
-
-async function verify_password(password, hash){
-  try{
-    return await argon2.verify(hash, password)
-  }catch(error){
-    throw error
-  }
-}
-
-async function hash_password(password){
-  try{
-    const hash = await argon2.hash(password)
-    return hash
-  }catch(error){
-    throw error
-  }
-}
 
 router.post('/logout', asyncHandler (async(req, res) => {
   const token = req.cookies.session_token
@@ -128,7 +98,7 @@ router.post('/register', asyncHandler (async(req, res) => {
   let reason = null
   let retry = 0
 
-  if (!user_validation(username, email, password, "register"))  return res.status(400).json({error: "Invalid registration information"})
+  if (!user_validation(username, email, password))  return res.status(400).json({error: "Invalid registration information"})
 
   const hash = await hash_password(password)
 
