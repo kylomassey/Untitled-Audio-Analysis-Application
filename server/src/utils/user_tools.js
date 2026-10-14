@@ -7,7 +7,7 @@ function user_validation(username = null, email = null, password = null){
     
     if(password && !password_regex.test(password)) return false
     if(username && !user_regex.test(username)) return false
-    if(!email_regex.test(email)) return false
+    if(email && !email_regex.test(email)) return false
     return true
 }
 
