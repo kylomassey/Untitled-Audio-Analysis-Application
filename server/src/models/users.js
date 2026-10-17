@@ -49,7 +49,7 @@ async function change_username(user_id = null, new_username = null){
     const result = await pool.query( "UPDATE users SET username = $1 WHERE user_id = $2 RETURNING username",
       [new_username, user_id]
      )
-    if (result.rows[0].length === 0) return [false, "invalid"]
+    if (result.rows.length === 0) return [false, "invalid"]
     return [true, result.rows[0].username]
   }catch(error){
     if (["ECONNREFUSED", "ETIMEDOUT", "08006", "08000", "08001", "57P01"].includes(error.code)) {
@@ -65,7 +65,7 @@ async function change_password (user_id = null, new_hash = null){
     const result = await pool.query( "UPDATE users SET password_hash = $1 WHERE user_id = $2 RETURNING user_id",
       [new_hash, user_id]
     )
-    if (result.rows[0].length === 0)return [false, "invalid"]
+    if (result.rows.length === 0)return [false, "invalid"]
     return [true, "success"]
   }catch(error){
     if (["ECONNREFUSED", "ETIMEDOUT", "08006", "08000", "08001", "57P01"].includes(error.code)) {

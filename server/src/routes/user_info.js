@@ -3,21 +3,20 @@ const requireAuth = require('../middleware/requireAuth')
 const router = express.Router()
 const { user_validation, hash_password, verify_password } =  require('../utils/user_tools')
 const { change_username, change_password, get_user_hash } = require('../models/users')
-const { password } = require('pg/lib/defaults')
 const MAX_RETRIES = 10 
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 router.patch('/username', requireAuth, async(req, res) =>{
     const new_username = req.body.new_username
-    const user_id = req.body.user_id
+    const user_id = req.user.user_id
     let retry = 0
     let outcome = null
     let result = null
     if(!user_validation(new_username, null, null)) return res.status(400).json({error: "Invalid username"})
 
     do{
-        [result, outcome] = change_username(user_id, new_username)
+        [result, outcome] = await change_username(user_id, new_username)
         retry ++
         if(outcome === "connection" && retry < MAX_RETRIES) await sleep(200*retry)
     }while(outcome === "connection" && retry < MAX_RETRIES)
@@ -44,7 +43,6 @@ router.patch('/password', requireAuth, async(req, res) =>{
 
     if(!user_validation(null, null, new_password)) return res.status(400).json({error: "Invalid new password"})
 
-    const new_hash = await hash_password(new_password)
     do{
         [result, outcome] = await get_user_hash(username)
         retry ++
@@ -55,6 +53,9 @@ router.patch('/password', requireAuth, async(req, res) =>{
             case "connection": return res.status(500).json({error: "Database is down"})
             case "other": return res.status(500).json({ error: "Unexpected error" })
         }
+    
+    const new_hash = await hash_password(new_password)
+
     if(!(await verify_password(cur_password, result))) return res.status(401).json({error: "Invalid password"})
 
     retry = 0
@@ -73,3 +74,5 @@ router.patch('/password', requireAuth, async(req, res) =>{
 
     return res.status(200).json({message: "Successfully changed password"})
 })
+
+module.exports = router
