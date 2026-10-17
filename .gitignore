@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 uploads/
+cache/
 node_modules/
 build/
 develop-eggs/
