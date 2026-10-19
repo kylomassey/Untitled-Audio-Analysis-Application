@@ -18,7 +18,7 @@ def save_audio(filename, audio):
     numpy.save(file_path, audio)
 
 def generate_spectrogram(path, window='hann', frame_len=None, hop_len=None, sr=None):
-    audio, sr = librosa.load(path, sr=sr)
+    audio, sr = load_audio(path)
     if frame_len is None:
         frame_len = int(sr * .05)
     if hop_len is None:
