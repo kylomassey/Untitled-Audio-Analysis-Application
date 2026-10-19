@@ -24,6 +24,15 @@ def handle_audio_upload(conn, job_id, file_id):
         conn.commit()
         print(e)
 
+def handle_spectrogram_generation(conn, job_id, file_id):
+    try:
+        with conn.cursor() as cur:
+    except Exception as e:
+        conn.rollback()
+        with conn.cursor() as cur:
+            cur.execute("UPDATE processing_jobs SET status = 'failed', error_message = %s, finished_at = clock_timestamp() WHERE id = %s", (str(e), job_id,))
+        conn.commit()
+        print(e)
 HANDLERS = {
     "audio_upload": handle_audio_upload
     }
